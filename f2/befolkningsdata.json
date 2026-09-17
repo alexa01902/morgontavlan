@@ -1,0 +1,37 @@
+[
+  {
+    "kommun": "Stockholm",
+    "län": "Stockholms län",
+    "år": 2023,
+    "befolkning": -984748,
+    "yta": 188
+  },
+  {
+    "kommun": "Göteborg",
+    "län": "Västra Götalands län",
+    "år": 2023,
+    "befolkning": 592300,
+    "yta": 447
+  },
+  {
+    "kommun": "Malmö",
+    "län": "Skåne län",
+    "år": 2023,
+    "befolkning": 351749,
+    "yta": 335
+  },
+  {
+    "kommun": "Uppsala",
+    "län": "Uppsala län",
+    "år": 2023,
+    "befolkning": 239855,
+    "yta": 2189
+  },
+  {
+    "kommun": "Eskilstuna",
+    "län": "Södermanlands län",
+    "år": 2023,
+    "befolkning": "-",
+    "yta": 1250
+  }
+]
