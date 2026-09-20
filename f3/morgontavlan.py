@@ -53,6 +53,75 @@ VADERSYMBOLER = {
     27: "Kraftigt snöfall",
 }
 
+SL_URL = "https://transport.integration.sl.se/v1"
+
+# Våra egna stationer. Nyckel = namn med små bokstäver, värde = SL:s site-id.
+# Lägg till de stationer du själv vill kunna söka på.
+STATIONER = {
+    "slussen": 9192,
+    "duvbo": 9324,
+    "sundbyberg": 9325,
+    "täby centrum": 9669,
+}
+
+
+def hitta_station_id(stationsnamn):
+    """Slår upp site-id för en station. Returnerar None om stationen inte finns i STATIONER."""
+    return STATIONER.get(stationsnamn.strip().lower())
+
+
+def hamta_avgangar(site_id, antal=5, transportslag=None):
+    """Hämtar kommande avgångar från en station och returnerar en lista med dictar.
+
+    transportslag kan vara t.ex. "METRO", "BUS", "TRAIN" eller "TRAM".
+    Utan transportslag får du alla sorter blandat.
+    """
+    svar = requests.get(f"{SL_URL}/sites/{site_id}/departures", timeout=10)
+    svar.raise_for_status()
+    avgangar = svar.json()["departures"]
+
+    if transportslag:
+        avgangar = [a for a in avgangar if a["line"]["transport_mode"] == transportslag]
+
+    # Sortera på förväntad tid, och på planerad tid om ingen förväntad finns
+    avgangar.sort(key=lambda a: a.get("expected") or a.get("scheduled", ""))
+
+    resultat = []
+    for a in avgangar[:antal]:
+        resultat.append(
+            {
+                "linje": a["line"]["designation"],
+                "slutstation": a["destination"],
+                "visas": a["display"],  # T.ex. "4 min" eller "14:32", som SL själva visar det
+                "transportslag": a["line"]["transport_mode"],
+            }
+        )
+    return resultat
+
+
+def visa_avgangar():
+    station = station_entry.get()
+    site_id = hitta_station_id(station)
+
+    if site_id is None:
+        message = (
+            f"Jag känner inte till stationen {station}.\n"
+            f"Prova: {', '.join(STATIONER)}"
+        )
+    else:
+        try:
+            avgangar = hamta_avgangar(site_id)
+            if not avgangar:
+                message = "Inga avgångar den närmaste timmen."
+            else:
+                message = f"Avgångar från {station}:\n\n"
+                for a in avgangar:
+                    message += f"{a['visas']:>8}  {a['linje']:>4}  {a['slutstation']}\n"
+        except requests.RequestException:
+            message = "Kunde inte nå SL just nu.\nKontrollera internetanslutningen."
+
+    departures_label.config(text=message)
+
 
 def hitta_plats(ortnamn):
     """Slår upp en ort och returnerar (namn, lat, lon), eller None om orten saknas."""
@@ -127,7 +196,7 @@ def visa_prognos():
 
 window = tk.Tk()
 window.title("Morgontavla")
-window.geometry("1100x700")
+window.geometry("1500x1000")
 window.configure(bg="#F5F6FA")
 
 
@@ -446,28 +515,33 @@ station_entry.pack(
     ipady=5
 )
 
-departures = [
-    ("Buss 43", "08:32"),
-    ("Buss 43", "08:47"),
-    ("Buss 52", "09:02")
-]
+search_transport_button = tk.Button(
+    transport_card,
+    text="Sök avgångar",
+    command=visa_avgangar,
+    font=("Arial", 11),
+    bg="#D8E4F2",
+    relief="flat"
+)
+search_transport_button.pack(
+    padx=20,
+    pady=(0, 10)
+)
 
-for bus, time in departures:
+departures_label = tk.Label(
+    transport_card,
+    text=f"",
+    font=("Arial", 13),
+    bg=COLORS["transport"],
+    fg=COLORS["text"],
+    justify="left",            # vänsterjustera raderna (standard är centrerat)
+)
 
-    departure_label = tk.Label(
-        transport_card,
-        text=f"{bus:<15}{time}",
-        font=("Arial", 13),
-        bg=COLORS["transport"],
-        fg=COLORS["text"],
-        anchor="w"
-    )
-
-    departure_label.pack(
-        fill="x",
-        padx=25,
-        pady=8
-    )
+departures_label.pack(
+    fill="x",
+    padx=25,
+    pady=8
+)
 # -------------------------
 # Hälsa
 # -------------------------
