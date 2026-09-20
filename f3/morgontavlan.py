@@ -2,6 +2,124 @@
 import tkinter as tk
 from tkinter import ttk
 
+"""Väderdelen av Morgontavlan: från ortnamn till prognos.
+
+Steg 1: ortnamn -> koordinater (geokodning, Open-Meteo, ingen nyckel behövs)
+Steg 2: koordinater -> prognos (SMHI:s öppna data, ingen nyckel behövs)
+"""
+
+from datetime import datetime
+from zoneinfo import ZoneInfo  # På Windows: pip install tzdata
+
+import requests
+
+GEOKODNING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+SMHI_URL = (
+    "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1"
+    "/geotype/point/lon/{lon}/lat/{lat}/data.json"
+)
+
+# SMHI anger tider i UTC, vi vill visa svensk tid
+SVENSK_TID = ZoneInfo("Europe/Stockholm")
+
+# Väderkoder (Wsymb2) från SMHI, översatta till svenska
+VADERSYMBOLER = {
+    1: "Klart",
+    2: "Mestadels klart",
+    3: "Växlande molnighet",
+    4: "Halvklart",
+    5: "Molnigt",
+    6: "Mulet",
+    7: "Dimma",
+    8: "Lätta regnskurar",
+    9: "Måttliga regnskurar",
+    10: "Kraftiga regnskurar",
+    11: "Åskväder",
+    12: "Lätta byar av snöblandat regn",
+    13: "Måttliga byar av snöblandat regn",
+    14: "Kraftiga byar av snöblandat regn",
+    15: "Lätta snöbyar",
+    16: "Måttliga snöbyar",
+    17: "Kraftiga snöbyar",
+    18: "Lätt regn",
+    19: "Måttligt regn",
+    20: "Kraftigt regn",
+    21: "Åska",
+    22: "Lätt snöblandat regn",
+    23: "Måttligt snöblandat regn",
+    24: "Kraftigt snöblandat regn",
+    25: "Lätt snöfall",
+    26: "Måttligt snöfall",
+    27: "Kraftigt snöfall",
+}
+
+
+def hitta_plats(ortnamn):
+    """Slår upp en ort och returnerar (namn, lat, lon), eller None om orten saknas."""
+    svar = requests.get(
+        GEOKODNING_URL,
+        params={
+            "name": ortnamn,
+            "count": 1,
+            "language": "sv",
+            "countryCode": "SE",  # Ta bort raden för att även hitta t.ex. Oslo
+        },
+        timeout=10,
+    )
+    svar.raise_for_status()
+
+    # Om inget hittas saknas nyckeln "results" helt i svaret
+    traffar = svar.json().get("results")
+    if not traffar:
+        return None
+
+    plats = traffar[0]
+    return plats["name"], plats["latitude"], plats["longitude"]
+
+
+def hamta_prognos(lat, lon, antal_timmar=6):
+    """Hämtar prognosen för en punkt och returnerar en lista med en dict per tidpunkt."""
+    url = SMHI_URL.format(lat=lat, lon=lon)
+    svar = requests.get(url, timeout=10)
+    svar.raise_for_status()
+
+    tidsserie = svar.json()["timeSeries"]
+
+    prognos = []
+    for punkt in tidsserie[:antal_timmar]:
+        data = punkt["data"]
+        tid_utc = datetime.fromisoformat(punkt["time"].replace("Z", "+00:00"))
+        prognos.append(
+            {
+                "tid": tid_utc.astimezone(SVENSK_TID),
+                "temperatur": data["air_temperature"],
+                "vind": data["wind_speed"],
+                "nederbordsrisk": data["probability_of_precipitation"],
+                "beskrivning": VADERSYMBOLER.get(data["symbol_code"], "Okänt väder"),
+            }
+        )
+    return prognos
+
+def visa_prognos():
+    ort = location_entry.get()
+
+    try:
+        plats = hitta_plats(ort)
+        if plats is None:
+            print(f"Hittade ingen ort som heter {ort}.")
+        else:
+            namn, lat, lon = plats
+            message = f"Prognos för {namn}:\n"
+            for rad in hamta_prognos(lat, lon):
+                message += (
+                    f"{rad['tid']:%H:%M}  {round(rad['temperatur'])} °C  "
+                    f"{rad['vind']} m/s  {rad['nederbordsrisk']} % regnrisk  "
+                    f"{rad['beskrivning']} \n"
+                )
+        weather_info.config(text=message)
+    except requests.RequestException:
+        print("Kunde inte nå tjänsten just nu. Kontrollera internetanslutningen.")
+
 
 # -------------------------
 # Fönster
@@ -71,6 +189,28 @@ def create_card(parent, title, color, row, column,
     )
 
     return frame
+
+def add_task():
+    task = task_entry.get()
+
+    if task != "":
+        check = tk.Checkbutton(
+            todo_frame,
+            text=task,
+            font=("Arial", 13),
+            bg=COLORS["todo"],
+            fg=COLORS["text"],
+            anchor="w",
+            padx=15,
+            pady=4
+        )
+
+        check.pack(
+            fill="x",
+            padx=15
+        )
+
+        task_entry.delete(0, tk.END)
 
 
 # -------------------------
@@ -179,6 +319,18 @@ location_entry.pack(
     pady=20
 )
 
+search_button = tk.Button(
+    weather_card,
+	text="Sök",
+    command=visa_prognos,
+	font=("Arial", 11),
+	bg="#D8E4F2",
+	relief="flat"
+)	
+
+search_button.pack(
+	padx=20)
+
 
 # -------------------------
 # 3. Klädtips
@@ -227,30 +379,17 @@ todo_card = create_card(
     column=0
 )
 
-tasks = [
-    "Träna",
-    "Plugga",
-    "Handla",
-    "Skicka mejl"
-]
+todo_frame = tk.Frame(
+	todo_card,
+	bg=COLORS["todo"]
+)
 
-for task in tasks:
-
-    check = tk.Checkbutton(
-        todo_card,
-        text=task,
-        font=("Arial", 13),
-        bg=COLORS["todo"],
-        fg=COLORS["text"],
-        anchor="w",
-        padx=15,
-        pady=4
-    )
-
-    check.pack(
-        fill="x",
-        padx=15
-    )
+todo_frame.pack(
+	fill="both",
+	expand=True,
+	padx=15,
+	pady=15
+)
 
 task_entry = tk.Entry(
     todo_card,
@@ -267,6 +406,7 @@ task_entry.pack(
 add_button = tk.Button(
     todo_card,
     text="Lägg till",
+    command=add_task,
     font=("Arial", 11),
     bg="#D8E4F2",
     relief="flat"
