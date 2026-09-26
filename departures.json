@@ -1,0 +1,195 @@
+{
+  "departures": [
+    {
+      "destination": "Kungsträdgården",
+      "direction_code": 2,
+      "direction": "Kungsträdgården",
+      "state": "EXPECTED",
+      "display": "3 min",
+      "scheduled": "2026-09-26T14:45:12",
+      "expected": "2026-09-26T14:45:16",
+      "journey": {
+        "id": 2026092634224,
+        "state": "NORMALPROGRESS",
+        "prediction_state": "NORMAL"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3442,
+        "name": "Duvbo",
+        "designation": "2"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    },
+    {
+      "destination": "Hjulsta",
+      "direction_code": 1,
+      "direction": "Hjulsta",
+      "state": "EXPECTED",
+      "display": "4 min",
+      "scheduled": "2026-09-26T14:46:00",
+      "expected": "2026-09-26T14:46:27",
+      "journey": {
+        "id": 2026092634221,
+        "state": "NORMALPROGRESS",
+        "prediction_state": "NORMAL"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3441,
+        "name": "Duvbo",
+        "designation": "1"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    },
+    {
+      "destination": "Kungsträdgården",
+      "direction_code": 2,
+      "direction": "Kungsträdgården",
+      "state": "EXPECTED",
+      "display": "13 min",
+      "scheduled": "2026-09-26T14:55:12",
+      "expected": "2026-09-26T14:55:16",
+      "journey": {
+        "id": 2026092634228,
+        "state": "NORMALPROGRESS",
+        "prediction_state": "NORMAL"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3442,
+        "name": "Duvbo",
+        "designation": "2"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    },
+    {
+      "destination": "Hjulsta",
+      "direction_code": 1,
+      "direction": "Hjulsta",
+      "state": "EXPECTED",
+      "display": "14 min",
+      "scheduled": "2026-09-26T14:56:00",
+      "expected": "2026-09-26T14:56:00",
+      "journey": {
+        "id": 2026092634225,
+        "state": "NORMALPROGRESS",
+        "prediction_state": "NORMAL"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3441,
+        "name": "Duvbo",
+        "designation": "1"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    },
+    {
+      "destination": "Kungsträdgården",
+      "direction_code": 2,
+      "direction": "Kungsträdgården",
+      "state": "EXPECTED",
+      "display": "23 min",
+      "scheduled": "2026-09-26T15:05:12",
+      "expected": "2026-09-26T15:05:12",
+      "journey": {
+        "id": 2026092634232,
+        "state": "EXPECTED"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3442,
+        "name": "Duvbo",
+        "designation": "2"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    },
+    {
+      "destination": "Hjulsta",
+      "direction_code": 1,
+      "direction": "Hjulsta",
+      "state": "EXPECTED",
+      "display": "24 min",
+      "scheduled": "2026-09-26T15:06:00",
+      "expected": "2026-09-26T15:06:00",
+      "journey": {
+        "id": 2026092634229,
+        "state": "EXPECTED"
+      },
+      "stop_area": {
+        "id": 3441,
+        "name": "Duvbo",
+        "type": "METROSTN"
+      },
+      "stop_point": {
+        "id": 3441,
+        "name": "Duvbo",
+        "designation": "1"
+      },
+      "line": {
+        "id": 10,
+        "designation": "10",
+        "transport_authority_id": 1,
+        "transport_mode": "METRO",
+        "group_of_lines": "Tunnelbanans blå linje"
+      },
+      "deviations": []
+    }
+  ],
+  "stop_deviations": []
+}

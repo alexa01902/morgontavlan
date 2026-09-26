@@ -1,7 +1,7 @@
 from gui.tools import create_card
 from gui.colors import COLORS
 import tkinter as tk
-from services.sl_api import get_departure_mgs
+from services.sl_api import get_departure_msg
 
 class TransportCard:
 	def __init__(self, parent_frame, row, column):
@@ -9,12 +9,36 @@ class TransportCard:
 		self.row = row
 		self.column = column
 
-		self.transport_card = create_card(
+		self.transport_card = tk.Frame(
 			self.parent_frame,
-			"Nästa buss/tåg",
-			COLORS["transport"],
+			bg=COLORS["transport"],
+			highlightbackground=COLORS["border"],
+			highlightthickness=1
+    	)
+
+		self.transport_card.grid(
 			row=row,
-			column=column
+			column=column,
+			rowspan=1,
+			columnspan=1,
+			padx=8,
+			pady=8,
+			sticky="nsew"
+		)
+
+		self.title_label = tk.Label(
+			self.transport_card,
+			text="Nästa buss/tåg",
+			font=("Arial", 16, "bold"),
+			bg=COLORS["transport"],
+			fg=COLORS["text"]
+		
+		)
+
+		self.title_label.pack(
+			anchor="w",
+			padx=20,
+			pady=(18, 10)
 		)
 
 		self.station_entry = tk.Entry(
@@ -48,7 +72,7 @@ class TransportCard:
 		self.departures_label = tk.Label(
 			self.transport_card,
 			text=f"",
-			font=("Arial", 13),
+			font=("Courier New", 13),
 			bg=COLORS["transport"],
 			fg=COLORS["text"],
 			justify="left",            # vänsterjustera raderna (standard är centrerat)
@@ -62,7 +86,7 @@ class TransportCard:
 
 	def show_departures(self):
 
-		message = get_departure_mgs(self.station_entry.get())
+		message = get_departure_msg(self.station_entry.get())
 		self.departures_label.config(text=message)
 
 

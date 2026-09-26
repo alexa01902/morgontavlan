@@ -8,13 +8,38 @@ class TodoCard:
 		self.row = row
 		self.column = column
 
-		self.todo_card = create_card(
-			self.parent_frame,
-			"Att göra idag",
-			COLORS["todo"],
-			row=self.row,
-			column=self.column
+		self.todo_card = tk.Frame(
+			parent_frame,
+			bg=COLORS["todo"],
+			highlightbackground=COLORS["border"],
+			highlightthickness=1
+    	)
+
+		self.todo_card .grid(
+			row=row,
+			column=column,
+			rowspan=1,
+			columnspan=1,
+			padx=8,
+			pady=8,
+			sticky="nsew"
 		)
+
+		self.title_label = tk.Label(
+			self.todo_card ,
+			text="Att göra idag",
+			font=("Arial", 16, "bold"),
+			bg=COLORS["todo"],
+			fg=COLORS["text"]
+		
+		)
+
+		self.title_label.pack(
+			anchor="w",
+			padx=20,
+			pady=(18, 10)
+		)
+
 
 		self.todo_frame = tk.Frame(
 			self.todo_card,
@@ -57,9 +82,9 @@ class TodoCard:
 		)
 	
 	def add_task(self):
-		task = self.task_entry.get()
+		task = self.task_entry.get() # Få ut texten som står i entry
 
-		if task != "":
+		if task != "": # kolla så att texten inte är tom
 			check = tk.Checkbutton(
 				self.todo_frame,
 				text=task,
@@ -72,10 +97,10 @@ class TodoCard:
 			)
 
 			check.pack(
-				fill="x",
+				anchor="w",
 				padx=15
 			)
 
-			self.task_entry.delete(0, tk.END)
+			self.task_entry.delete(0, tk.END) #töm entry
 
 

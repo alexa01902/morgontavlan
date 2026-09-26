@@ -11,16 +11,37 @@ class WeatherCard:
 		self.column = column
 		self.clothes_card = clothes_card
 
-		# -------------------------
-		# Väder
-		# -------------------------
-
-		self.weather_card = create_card(
+		
+		self.weather_card = tk.Frame(
 			self.parent_frame,
-			"Väder",
-			COLORS["weather"],
-			row=self.row,
-			column=self.column
+			bg=COLORS["weather"],
+			highlightbackground=COLORS["border"],
+			highlightthickness=1
+    	)
+
+		self.weather_card.grid(
+			row=row,
+			column=column,
+			rowspan=1,
+			columnspan=1,
+			padx=8,
+			pady=8,
+			sticky="nsew"
+		)
+
+		self.title_label = tk.Label(
+			self.weather_card,
+			text="Väder",
+			font=("Arial", 16, "bold"),
+			bg=COLORS["weather"],
+			fg=COLORS["text"]
+		
+		)
+
+		self.title_label.pack(
+			anchor="w",
+			padx=20,
+			pady=(18, 10)
 		)
 
 		self.weather_label = tk.Label(

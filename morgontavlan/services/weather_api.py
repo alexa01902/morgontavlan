@@ -19,37 +19,6 @@ SMHI_URL = (
 # SMHI anger tider i UTC, vi vill visa svensk tid
 SVENSK_TID = ZoneInfo("Europe/Stockholm")
 
-# Väderkoder (Wsymb2) från SMHI, översatta till svenska
-VADERSYMBOLER = {
-    1: "Klart",
-    2: "Mestadels klart",
-    3: "Växlande molnighet",
-    4: "Halvklart",
-    5: "Molnigt",
-    6: "Mulet",
-    7: "Dimma",
-    8: "Lätta regnskurar",
-    9: "Måttliga regnskurar",
-    10: "Kraftiga regnskurar",
-    11: "Åskväder",
-    12: "Lätta byar av snöblandat regn",
-    13: "Måttliga byar av snöblandat regn",
-    14: "Kraftiga byar av snöblandat regn",
-    15: "Lätta snöbyar",
-    16: "Måttliga snöbyar",
-    17: "Kraftiga snöbyar",
-    18: "Lätt regn",
-    19: "Måttligt regn",
-    20: "Kraftigt regn",
-    21: "Åska",
-    22: "Lätt snöblandat regn",
-    23: "Måttligt snöblandat regn",
-    24: "Kraftigt snöblandat regn",
-    25: "Lätt snöfall",
-    26: "Måttligt snöfall",
-    27: "Kraftigt snöfall",
-}
-
 def hitta_plats(ortnamn):
     """Slår upp en ort och returnerar (namn, lat, lon), eller None om orten saknas."""
     svar = requests.get(
@@ -57,8 +26,6 @@ def hitta_plats(ortnamn):
         params={
             "name": ortnamn,
             "count": 1,
-            "language": "sv",
-            "countryCode": "SE",  # Ta bort raden för att även hitta t.ex. Oslo
         },
         timeout=10,
     )
@@ -84,14 +51,13 @@ def hamta_prognos(lat, lon, antal_timmar=6):
     prognos = []
     for punkt in tidsserie[:antal_timmar]:
         data = punkt["data"]
-        tid_utc = datetime.fromisoformat(punkt["time"].replace("Z", "+00:00"))
+        tid_utc = datetime.fromisoformat(punkt["time"])
         prognos.append(
             {
                 "tid": tid_utc.astimezone(SVENSK_TID),
                 "temperatur": data["air_temperature"],
                 "vind": data["wind_speed"],
                 "nederbordsrisk": data["probability_of_precipitation"],
-                "beskrivning": VADERSYMBOLER.get(data["symbol_code"], "Okänt väder"),
             }
         )
     return prognos
@@ -106,10 +72,10 @@ def get_prognose_msg(ort):
             namn, lat, lon = plats
             message = f"Prognos för {namn}:\n"
             for rad in hamta_prognos(lat, lon):
+                tid_text = rad['tid'].strftime("%H:%M")
                 message += (
-                    f"{rad['tid']:%H:%M}  {round(rad['temperatur'])} °C  "
+                    f"{tid_text}  {round(rad['temperatur'])} °C  "
                     f"{rad['vind']} m/s  {rad['nederbordsrisk']} % regnrisk  "
-                    f"{rad['beskrivning']} \n"
                 )
     except requests.RequestException:
         print("Kunde inte nå tjänsten just nu. Kontrollera internetanslutningen.")

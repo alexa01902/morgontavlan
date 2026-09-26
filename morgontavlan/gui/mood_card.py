@@ -15,13 +15,37 @@ class MoodCard:
 		self.column = column
 		self.FILE = filename
 		self.column_name = ["datetime", "mood"]
-
-		self.mood_card = create_card(
+					
+		self.mood_card = tk.Frame(
 			self.parent_frame,
-			"Morgonhumör",
-			COLORS["mood"],
-			row=self.row,
-			column=self.column
+			bg=COLORS["mood"],
+			highlightbackground=COLORS["border"],
+			highlightthickness=1
+		)
+
+		self.mood_card.grid(
+			row=row,
+			column=column,
+			rowspan=1,
+			columnspan=1,
+			padx=8,
+			pady=8,
+			sticky="nsew"
+		)
+
+		self.title_label = tk.Label(
+			self.mood_card,
+			text="Morgonhumör",
+			font=("Arial", 16, "bold"),
+			bg=COLORS["mood"],
+			fg=COLORS["text"]
+		
+		)
+
+		self.title_label.pack(
+			anchor="w",
+			padx=20,
+			pady=(18, 10)
 		)
 
 		self.mood_label = tk.Label(
@@ -69,7 +93,8 @@ class MoodCard:
 			fill="both",
 			expand=True,
 			padx=20,
-			pady=20
+			pady=20,
+
 		)
 
 		self.update_mood_plot()
@@ -86,48 +111,33 @@ class MoodCard:
 			f.write(f"{datetime.now().isoformat()},{humör}\n")
 
 		self.update_mood_plot()
-
-	
-	def las_data(self, filnamn):
-		"""Läser csv-filen.
-	
-		Excel på svenska sparar csv med semikolon som avgränsare och decimalkomma,
-		därför sep=";" och decimal=",". Om åäö blir konstiga tecken, prova
-		encoding="cp1252" (Windows) i stället för standardvärdet utf-8.
-		"""
-		return pd.read_csv(filnamn, sep=",")
-	
 	
 	def skapa_stapeldiagram(self, df):
 		"""Bygger ett stapeldiagram och returnerar figuren.
-	
-	
-		Vi använder Figure direkt och inte plt.subplots(). Då hamnar diagrammet
-		bara i vårt tkinter-fönster och matplotlib försöker inte öppna ett eget.
 		"""
 		
-		figur = Figure(figsize=(7, 4), dpi=100)
+		figur = Figure(figsize=(4, 2.5), dpi=100)
 		ax = figur.add_subplot(111)
 		ax.bar(df[self.column_name[1]].value_counts().index, df[self.column_name[1]].value_counts().values, color="#FCE8E6"   )
-	
 		ax.set_title("Humörfördelning")
 		ax.set_xlabel("Humör")
 		ax.set_ylabel("Antal")
-		figur.tight_layout()
 		return figur
 
 	def update_mood_plot(self):
 		try:
 
-			df = self.las_data(self.FILE)
+			df = pd.read_csv(self.FILE, sep=",")
 
 			# Rita om diagrammet baserat på den nya datan
 			figur = self.skapa_stapeldiagram(df)
 
 			# Uppdatera canvas
+			self.canvas_frame.columnconfigure(0, weight=1)
+			self.canvas_frame.rowconfigure(0, weight=1)
 			canvas = FigureCanvasTkAgg(figur, master=self.canvas_frame)
 			tk_widget = canvas.get_tk_widget()
-			tk_widget.grid(row=0, column=0,  padx=20, pady=20, sticky="nsew")
+			tk_widget.grid(row=0, column=0,  padx=20, pady=20)
 
 		except FileNotFoundError:
 			print(f"Hittade inte filen {self.FILE}.")

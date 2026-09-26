@@ -5,18 +5,42 @@ from services.ai_advice import get_clothing_advice
 
 
 class ClothesCard:
-		def __init__(self, parent_fram, row, column):
-			self.parent_fram = parent_fram
+		def __init__(self, parent_frame, row, column):
+			self.parent_frame = parent_frame
 			self.row = row
 			self.column = column
 			self.weather_data = None
+			
+			self.outfit_card = tk.Frame(
+				self.parent_frame,
+				bg=COLORS["outfit"],
+				highlightbackground=COLORS["border"],
+				highlightthickness=1
+			)
 
-			self.outfit_card = create_card(
-				self.parent_fram,
-				"Dagens klädtips",
-				COLORS["outfit"],
-				row=0,
-				column=2
+			self.outfit_card.grid(
+				row=row,
+				column=column,
+				rowspan=1,
+				columnspan=1,
+				padx=8,
+				pady=8,
+				sticky="nsew"
+			)
+
+			self.title_label = tk.Label(
+				self.outfit_card,
+				text="Dagens klädtips",
+				font=("Arial", 16, "bold"),
+				bg=COLORS["outfit"],
+				fg=COLORS["text"]
+			
+			)
+
+			self.title_label.pack(
+				anchor="w",
+				padx=20,
+				pady=(18, 10)
 			)
 
 			self.outfit_icon = tk.Label(
@@ -43,4 +67,4 @@ class ClothesCard:
 
 		def show_advice(self, weather_data):
 			advice = get_clothing_advice(weather_data)
-			self.parent_fram.after(0, lambda: self.outfit_text.config(text=advice))
+			self.parent_frame.after(0, lambda: self.outfit_text.config(text=advice))

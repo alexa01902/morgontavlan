@@ -11,28 +11,22 @@ STATIONER = {
     "täby centrum": 9669,
 }
 
-tk_widget = None  # Variabel för att hålla referensen till det nuvarande diagrammet
-
-def hitta_station_id(stationsnamn):
+def hitta_station_id(station_name):
     """Slår upp site-id för en station. Returnerar None om stationen inte finns i STATIONER."""
-    return STATIONER.get(stationsnamn.strip().lower())
+    stationsname = station_name.strip().lower()
+
+    if station_name in STATIONER:
+        return STATIONER[stationsname]
+    else:
+        return None
 
 
-def hamta_avgangar(site_id, antal=5, transportslag=None):
+def hamta_avgangar(site_id, antal=5):
     """Hämtar kommande avgångar från en station och returnerar en lista med dictar.
-
-    transportslag kan vara t.ex. "METRO", "BUS", "TRAIN" eller "TRAM".
-    Utan transportslag får du alla sorter blandat.
     """
     svar = requests.get(f"{SL_URL}/sites/{site_id}/departures", timeout=10)
-    svar.raise_for_status()
+    svar.raise_for_status()   # Ger ett tydligt fel direkt om anropet misslyckades, istället för en krasch längre ner
     avgangar = svar.json()["departures"]
-
-    if transportslag:
-        avgangar = [a for a in avgangar if a["line"]["transport_mode"] == transportslag]
-
-    # Sortera på förväntad tid, och på planerad tid om ingen förväntad finns
-    avgangar.sort(key=lambda a: a.get("expected") or a.get("scheduled", ""))
 
     resultat = []
     for a in avgangar[:antal]:
@@ -41,13 +35,12 @@ def hamta_avgangar(site_id, antal=5, transportslag=None):
                 "linje": a["line"]["designation"],
                 "slutstation": a["destination"],
                 "visas": a["display"],  # T.ex. "4 min" eller "14:32", som SL själva visar det
-                "transportslag": a["line"]["transport_mode"],
             }
         )
     return resultat
 
 
-def get_departure_mgs(station):
+def get_departure_msg(station):
 
     site_id = hitta_station_id(station)
 
@@ -65,9 +58,13 @@ def get_departure_mgs(station):
             else:
                 message = f"Avgångar från {station}:\n\n"
                 for a in avgangar:
-                    message += f"{a['visas']:>8}  {a['linje']:>4}  {a['slutstation']}\n"
+                    message += f"{a['visas']:<5}  {a['linje']:<3}  {a['slutstation']}\n"
         except requests.RequestException:
             message = "Kunde inte nå SL just nu.\nKontrollera internetanslutningen."
 
         return message
-    
+
+
+if __name__ == "__main__":
+    station = input("Vilken station vill du se avgångar för? ")
+    print(get_departure_msg(station))
