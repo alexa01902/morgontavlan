@@ -1,4 +1,5 @@
 
+import os
 import tkinter as tk
 from tkinter import ttk
 
@@ -18,6 +19,41 @@ SMHI_URL = (
     "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1"
     "/geotype/point/lon/{lon}/lat/{lat}/data.json"
 )
+
+import os
+from dotenv import load_dotenv
+from google import genai
+
+# Läs in API-nyckeln från .env-filen (se instruktioner för hur du skapar en)
+load_dotenv()
+client = genai.Client()  # hämtar automatiskt nyckeln från miljövariabeln GEMINI_API_KEY
+
+
+def hämta_klädråd(väderdata):
+    """
+    Skickar väderinfo till Gemini och returnerar ett kort klädråd.
+
+    temperatur: t.ex. 5 (grader Celsius)
+    nederbörd: t.ex. "regn", "snö" eller "uppehåll"
+    """
+    prompt = (
+        f"Det här är väderdata från SMHI: {väderdata}. "
+        "Ge ett kort klädråd på max två meningar, på svenska."
+    )
+
+    try:
+        interaktion = client.interactions.create(
+            model="gemini-3.8-flash",
+            input=prompt
+        )
+        return interaktion.output_text
+
+    except Exception as e:
+        # Fångar allt som kan gå fel: fel nyckel, ingen internetuppkoppling,
+        # för många anrop (rate limit) etc.
+        print(f"Fel vid AI-anrop: {e}")
+        return "Kunde inte hämta klädråd just nu, försök igen senare."
+
 
 # SMHI anger tider i UTC, vi vill visa svensk tid
 SVENSK_TID = ZoneInfo("Europe/Stockholm")
@@ -64,6 +100,7 @@ STATIONER = {
     "täby centrum": 9669,
 }
 
+tk_widget = None  # Variabel för att hålla referensen till det nuvarande diagrammet
 
 def hitta_station_id(stationsnamn):
     """Slår upp site-id för en station. Returnerar None om stationen inte finns i STATIONER."""
@@ -169,13 +206,16 @@ def hamta_prognos(lat, lon, antal_timmar=6):
         )
     return prognos
 
+import threading
+
 def visa_prognos():
     ort = location_entry.get()
 
     try:
         plats = hitta_plats(ort)
         if plats is None:
-            print(f"Hittade ingen ort som heter {ort}.")
+            message = f"Hittade ingen ort som heter {ort}."
+            outfit_text.config(text="")
         else:
             namn, lat, lon = plats
             message = f"Prognos för {namn}:\n"
@@ -185,10 +225,90 @@ def visa_prognos():
                     f"{rad['vind']} m/s  {rad['nederbordsrisk']} % regnrisk  "
                     f"{rad['beskrivning']} \n"
                 )
+            outfit_text.config(text="Hämtar klädråd…")
+
+            # Starta AI-anropet i en separat tråd så fönstret inte fryser
+            tråd = threading.Thread(target=hämta_och_visa_klädråd, args=(message,))
+            tråd.daemon = True
+            tråd.start()
+
         weather_info.config(text=message)
+
     except requests.RequestException:
         print("Kunde inte nå tjänsten just nu. Kontrollera internetanslutningen.")
 
+
+def hämta_och_visa_klädråd(väderdata):
+    """
+    Körs i bakgrundstråden. Tkinter-widgets får bara uppdateras från
+    huvudtråden, så vi skickar tillbaka resultatet via root.after
+    istället för att sätta texten direkt här.
+    """
+    klädråd = hämta_klädråd(väderdata)
+    window.after(0, lambda: outfit_text.config(text=klädråd))
+
+FIL = "sovlogg.csv"
+def log_mood():
+    humör = mood_combobox.get()
+    with open(FIL, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.now().isoformat()},{humör}\n")
+
+    update_mood_plot()
+
+
+ 
+import pandas as pd
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+  # Variabel för att hålla referensen till det nuvarande diagrammet
+ 
+
+KOLUMN = "mood"
+ 
+ 
+def las_data(filnamn):
+    """Läser csv-filen.
+ 
+    Excel på svenska sparar csv med semikolon som avgränsare och decimalkomma,
+    därför sep=";" och decimal=",". Om åäö blir konstiga tecken, prova
+    encoding="cp1252" (Windows) i stället för standardvärdet utf-8.
+    """
+    return pd.read_csv(filnamn, sep=",")
+ 
+ 
+def skapa_stapeldiagram(df):
+    """Bygger ett stapeldiagram och returnerar figuren.
+ 
+    Vi använder Figure direkt och inte plt.subplots(). Då hamnar diagrammet
+    bara i vårt tkinter-fönster och matplotlib försöker inte öppna ett eget.
+    """
+    figur = Figure(figsize=(7, 4), dpi=100)
+    ax = figur.add_subplot(111)
+    ax.bar(df[KOLUMN].value_counts().index, df[KOLUMN].value_counts().values, color="#FCE8E6"   )
+ 
+    ax.set_title("Humörfördelning")
+    ax.set_xlabel("Humör")
+    ax.set_ylabel("Antal")
+    figur.tight_layout()
+    return figur
+
+def update_mood_plot():
+    try:
+
+        df = las_data(FIL)
+
+        # Rita om diagrammet baserat på den nya datan
+        figur = skapa_stapeldiagram(df)
+
+        # Uppdatera canvas
+        canvas = FigureCanvasTkAgg(figur, master=canvas_frame)
+        tk_widget = canvas.get_tk_widget()
+        tk_widget.grid(row=0, column=0,  padx=20, pady=20, sticky="nsew")
+
+    except FileNotFoundError:
+        print(f"Hittade inte filen {FIL}.")
+
+ 
 
 # -------------------------
 # Fönster
@@ -424,13 +544,12 @@ outfit_icon.pack(pady=10)
 
 outfit_text = tk.Label(
     outfit_card,
-    text="Det blir lite kyligt idag,\n"
-         "så en tunn jacka och\n"
-         "långbyxor passar bra.",
+    text="Sök på vädret i en ort för att få klädtips.",
     font=("Arial", 13),
     bg=COLORS["outfit"],
     fg=COLORS["text"],
-    justify="left"
+    justify="left",
+    wraplength=300
 )
 
 outfit_text.pack(pady=10)
@@ -542,83 +661,18 @@ departures_label.pack(
     padx=25,
     pady=8
 )
-# -------------------------
-# Hälsa
-# -------------------------
 
-bottom_right_frame = tk.Frame(
-    main_frame,
-    bg=COLORS["background"]
-)
-
-bottom_right_frame.grid(
-    row=1,
-    column=2,
-    padx=8,
-    pady=8,
-    sticky="nsew"
-)
-
-# Två kolumner inuti behållaren
-bottom_right_frame.columnconfigure(0, weight=1)
-bottom_right_frame.columnconfigure(1, weight=1)
-
-bottom_right_frame.rowconfigure(0, weight=1)
-
-# -------------------------
-# 6. Sömn
-# -------------------------
-
-sleep_card = create_card(
-    bottom_right_frame,
-    "Sömn",
-    COLORS["sleep"],
-    row=0,
-    column=0
-)
-
-sleep_icon = tk.Label(
-    sleep_card,
-    text="☾",
-    font=("Arial", 30),
-    bg=COLORS["sleep"]
-)
-
-sleep_icon.pack(pady=5)
-
-sleep_label = tk.Label(
-    sleep_card,
-    text="Hur många timmar sov du?",
-    font=("Arial", 12),
-    bg=COLORS["sleep"],
-    fg=COLORS["text"]
-)
-
-sleep_label.pack(pady=5)
-
-sleep_options = ["4 h", "5 h", "6 h", "7 h", "8 h", "9 h"]
-
-sleep_combobox = ttk.Combobox(
-    sleep_card,
-    values=sleep_options,
-    state="readonly",
-    width=10
-)
-
-sleep_combobox.set("7 h")
-
-sleep_combobox.pack(pady=10)
 
 # -------------------------
 # 7. Morgonhumör
 # -------------------------
 
 mood_card = create_card(
-    bottom_right_frame,
+    main_frame,
     "Morgonhumör",
     COLORS["mood"],
-    row=0,
-    column=1
+    row=1,
+    column=2
 )
 
 mood_label = tk.Label(
@@ -643,6 +697,38 @@ mood_combobox = ttk.Combobox(
 mood_combobox.set("Bra")
 
 mood_combobox.pack(pady=10)
+
+mood_button = tk.Button(
+    mood_card,
+    text="Spara humör",
+    command=log_mood,
+    font=("Arial", 11),
+    bg="#D8E4F2",
+    relief="flat"
+)
+
+mood_button.pack(
+    pady=10
+)
+
+canvas_frame = tk.Frame(
+    mood_card,
+    bg=COLORS["mood"]
+)
+
+canvas_frame.pack(
+    fill="both",
+    expand=True,
+    padx=20,
+    pady=20
+)
+
+df  = las_data(FIL)
+figur = skapa_stapeldiagram(df)
+
+canvas = FigureCanvasTkAgg(figur, master=canvas_frame )
+tk_widget = canvas.get_tk_widget()
+tk_widget.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
 
 # -------------------------
