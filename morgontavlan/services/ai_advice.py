@@ -31,6 +31,10 @@ def get_clothing_advice(väderdata):
         print(f"Fel vid AI-anrop: {e}")
         return "Kunde inte hämta klädråd just nu, försök igen senare."
 
+if __name__ == "__main__":
+        testdata = "Prognos för Stockholm:\n12:00  5 °C  3 m/s  60 % regnrisk"
+        print(get_clothing_advice(testdata))
 
 
     
+

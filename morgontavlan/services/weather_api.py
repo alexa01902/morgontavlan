@@ -75,7 +75,7 @@ def get_prognose_msg(ort):
                 tid_text = rad['tid'].strftime("%H:%M")
                 message += (
                     f"{tid_text}  {round(rad['temperatur'])} °C  "
-                    f"{rad['vind']} m/s  {rad['nederbordsrisk']} % regnrisk  "
+                    f"{rad['vind']} m/s  {rad['nederbordsrisk']} % regnrisk\n"
                 )
     except requests.RequestException:
         print("Kunde inte nå tjänsten just nu. Kontrollera internetanslutningen.")

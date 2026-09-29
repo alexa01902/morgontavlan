@@ -9,7 +9,6 @@ class ClothesCard:
 			self.parent_frame = parent_frame
 			self.row = row
 			self.column = column
-			self.weather_data = None
 			
 			self.outfit_card = tk.Frame(
 				self.parent_frame,
@@ -67,4 +66,5 @@ class ClothesCard:
 
 		def show_advice(self, weather_data):
 			advice = get_clothing_advice(weather_data)
-			self.parent_frame.after(0, lambda: self.outfit_text.config(text=advice))
+			#self.parent_frame.after(0, lambda: self.outfit_text.config(text=advice))
+			self.outfit_text.config(text=advice)
